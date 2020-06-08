@@ -1,65 +1,86 @@
 import React, { Component } from 'react';
-import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { v4 as uuidv4 } from 'uuid';
+import AccountBalance from './AccountBalance';
 
-export class Credits extends Component {
-  constructor() {
-    super();
-    this.state = {
-      credits: [],
-    };
-  }
+class Credits extends Component {
+  state = {
+    transactionDescription: '',
+    transactionAmount: '',
+    credits: this.props.credits,
+    creditBalance: this.props.creditBalance,
+    accountBalance: this.props.accountBalance,
+  };
 
-  componentDidMount() {
-    const url = 'https://moj-api.herokuapp.com/credits';
-    axios
-      .get(url)
-      .then((res) => {
-        //console.log(res.data);
-        let data = res.data;
-        let credits = [];
-        data.map((e) => {
-          return credits.push({
-            id: e.id,
-            description: e.description,
-            amount: e.amount,
-            date: e.date,
-          });
-        });
-        //console.log('debit value:', credits);
-        this.setState({ credits });
-        //this.setState({ credits: res });
-      })
-      .catch((err) => console.log(err));
-  }
+  handleSubmit = (event) => {
+    event.preventDefault();
+    let amount = parseFloat(this.state.transactionAmount);
+    amount = amount.toFixed(2);
+    let credits = this.props.credits.push({
+      amount,
+      description: this.state.transactionDescription,
+      date: Date.now(),
+      id: uuidv4(),
+    });
+
+    console.log('amount:', amount);
+    let creditBalance = parseFloat(this.state.creditBalance) + amount;
+    console.log('creditBalance:', typeof creditBalance);
+    this.setState({ credits });
+
+    this.props.handleAddCredits(amount);
+  };
+
+  handleChange = (event) => {
+    this.setState({ [event.target.name]: event.target.value });
+  };
 
   render() {
-    let display;
-    let debit = this.state.credits;
-    if (debit) {
-      // console.log('Debit is:', debit);
-      display = debit.map((e) => {
-        return (
-          <div key={uuidv4()}>
-            <h3>
-              {e.description} <div style={amountStyle}>{e.amount}</div>
-            </h3>
-            <p>Date: {e.date}</p>
-            <p>ID: {e.id}</p>
-            <br></br>
-          </div>
-        );
-      });
-
-      return display;
-    } else {
-      display = <>Waiting...</>;
-    }
-
     return (
       <div>
-        <Link to='/'>Home</Link>
+        <Link to='/userprofile'>Profile</Link>
+        <h1>Credit Transaction History</h1>
+        <AccountBalance
+          accountBalance={this.props.creditBalance - this.props.debitBalance}
+        />
+
+        <div className='AddcreditTransaction'>
+          <form onSubmit={this.handleSubmit}>
+            <input
+              type='text'
+              name='transactionDescription'
+              placeholder='Transaction Description'
+              value={this.state.transactionDescription}
+              onChange={this.handleChange}
+              required={true}
+            ></input>
+            <input
+              type='text'
+              name='transactionAmount'
+              placeholder='Transaction Amount'
+              value={this.state.transactionAmount}
+              onChange={this.handleChange}
+              required={true}
+            ></input>
+            <button name='AddcreditButton'>Add credit</button>
+          </form>
+        </div>
+
+        <div className='showcreditHistory'>
+          {this.props.credits.map((e) => {
+            return (
+              <div key={uuidv4()}>
+                <h3>
+                  {e.description.toUpperCase()}{' '}
+                  <div style={amountStyle}>${e.amount}</div>
+                </h3>
+                <p>Date: {e.date}</p>
+                <p>ID: {e.id}</p>
+                <br></br>
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }
